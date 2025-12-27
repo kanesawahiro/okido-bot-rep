@@ -1,4 +1,4 @@
-# 🎓 日本語パトロールX bot マサラタウン日本語研究所　
+# X自動リプライbot マサラタウン日本語研究所　
 ### 〜 正しい日本語、ゲットじゃぞ！ 〜
 
 ![GitHub Actions Status](https://img.shields.io/badge/Status-Active-brightgreen)
