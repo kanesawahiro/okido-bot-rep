@@ -2,8 +2,9 @@ name: Okido Patrol
 
 on:
   schedule:
+    # 毎日 日本時間 08:00 (UTC 23:00) と 20:00 (UTC 11:00) に自動出動
     - cron: '0 23,11 * * *'
-  workflow_dispatch:
+  workflow_dispatch: # 手動実行ボタン
 
 jobs:
   build:
@@ -13,7 +14,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        # ここが重要じゃ！pathを指定せず、一番外側に展開させるぞい
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -25,8 +25,6 @@ jobs:
           pip install tweepy requests python-dotenv
 
       - name: Run bot
-        # ここで「作業場所」を明示的に指定してやるのじゃ！
-        # フォルダが二重になっても、その中に入ってから実行するぞい
         working-directory: ${{ github.workspace }}
         env:
           X_API_KEY: ${{ secrets.X_API_KEY }}
@@ -36,18 +34,22 @@ jobs:
           X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
           RAPID_API_KEY: ${{ secrets.RAPID_API_KEY }}
         run: |
-          # フォルダ構成を無視して、ファイルを見つけ出して実行する執念のコマンドじゃ！
+          # 執念のファイル捜索と、リアルタイムログ(-u)の合わせ技じゃ！
           TARGET=$(find . -name "okido_bot_cloud.py" | head -n 1)
-          python "$TARGET"
+          python -u "$TARGET"
 
       - name: Commit and push changes
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          # ファイルを探して追加するぞい
+          
+          # 【重要】他での変更（YAML編集など）を取り込んでから日記を保存するぞい
+          git pull --rebase origin main
+          
+          # 記憶ファイルを探して保存
           TARGET_FILE=$(find . -name "replied_tweets.txt" | head -n 1)
           if [ -f "$TARGET_FILE" ]; then
             git add "$TARGET_FILE"
-            git commit -m "博士の記憶を更新" || echo "No changes"
+            git commit -m "博士の記憶を更新（パトロール完了）" || echo "変更なし"
             git push
           fi
