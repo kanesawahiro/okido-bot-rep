@@ -32,10 +32,16 @@ jobs:
           X_ACCESS_TOKEN_SECRET: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
           X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
           RAPID_API_KEY: ${{ secrets.RAPID_API_KEY }}
-        # ここを「この場所（./）にあるファイルを実行せよ」という書き方に変えるぞい！
         run: |
-          ls -R  # デバッグ用にファイル一覧を表示させるおまじない
-          python ./okido_bot_cloud.py
+          # どの階層にファイルがあるか探し出し、見つけた場所で実行する魔法のコマンドじゃ！
+          FILE_PATH=$(find . -name "okido_bot_cloud.py" | head -n 1)
+          if [ -z "$FILE_PATH" ]; then
+            echo "エラー：ファイルがリポジトリのどこにも見当たらんぞい！"
+            ls -R
+            exit 1
+          fi
+          echo "ファイルを発見したぞい：$FILE_PATH"
+          python "$FILE_PATH"
 
       - name: Commit and push changes
         run: |
