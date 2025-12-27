@@ -30,7 +30,7 @@ def search_tweets_external(query):
     try:
         response = requests.get(url, headers=headers, params=params)
         if response.status_code == 429:
-            print("  [!] RapidAPI制限：一時中断じゃ。")
+            print("  [!] RapidAPI制限中...")
             return "LIMIT"
         return response.json().get('timeline', []) if response.status_code == 200 else []
     except Exception as e:
@@ -49,15 +49,28 @@ def save_replied_id(tweet_id):
     with open(REPLIED_FILE, "a+", encoding="utf-8") as f:
         f.write(f"{tweet_id}\n")
 
-# --- 4. パトロール実行（最大効率ver） ---
+# --- 4. 実行コアロジック ---
 def start_patrol():
-    MAX_REPLIES_PER_RUN = 2  # 1回の実行で2件まで（1日8回×2=16件/日で制限内）
-    replied_count = 0
-
     print("\n" + "="*40)
-    print(f"オーキド博士「最大効率パトロール開始！目標:{MAX_REPLIES_PER_RUN}件」")
+    print("オーキド博士「まずは通信テストじゃ！」")
+    
+    # 【重要】まずはリプライではなく「普通の投稿」ができるかテスト
+    try:
+        test_text = f"日本語調査パトロール、通信テスト中じゃぞい！({time.strftime('%H:%M:%S')})"
+        client.create_tweet(text=test_text)
+        print("  【成功】普通の投稿（ツイート）が成功したぞい！通信は生きておる！")
+    except Exception as e:
+        print(f"  【致命的失敗】普通の投稿すら403エラーで弾かれたぞい。")
+        print(f"  エラー詳細: {e}")
+        print("\n  博士のアドバイス：Portalで『Read and Write』の権限を確認し、")
+        print("  キーをRegenerate（再生成）してGitHubに設定し直すのじゃ！")
+        return # テスト失敗ならここで終了
+
+    print("\n  通信テスト合格！続いてパトロールを開始するぞい...")
     print("="*40)
     
+    MAX_REPLIES_PER_RUN = 2
+    replied_count = 0
     replied_ids = load_replied_ids()
     search_list = list(CORRECTION_RULES.items())
     random.shuffle(search_list)
@@ -78,32 +91,26 @@ def start_patrol():
 
             if not tweet_id or not user_name or tweet_id in replied_ids: continue
             
-            # ボット嫌い・スパム等を回避
-            ignore_keywords = ["botお断り", "通報", "ブロック", "スパム"]
-            if any(k in text for k in ignore_keywords): continue
+            if any(k in text for k in ["botお断り", "通報", "ブロック"]): continue
 
             if wrong in text and right not in text:
                 try:
                     msg = generate_okido_msg(user_name, wrong, right)
-                    # API v2のリプライ仕様に合わせ、IDを数値化
+                    # リプライ実行
                     client.create_tweet(text=msg, in_reply_to_tweet_id=int(tweet_id))
                     
-                    print(f"  【成功】{user_name}くんに教えたぞ！({replied_count + 1}件目)")
+                    print(f"  【成功】{user_name}くんにリプライ完了！")
                     save_replied_id(tweet_id)
                     replied_ids.add(tweet_id)
                     replied_count += 1
-
-                    if replied_count < MAX_REPLIES_PER_RUN:
-                        wait_time = random.randint(120, 300)
-                        print(f"  [待機] スパム避けの休憩じゃ。{wait_time}秒待つぞい...")
-                        time.sleep(wait_time)
+                    time.sleep(random.randint(60, 120)) # 間隔をあける
 
                 except Exception as e:
-                    print(f"  [!] 403/429エラー等を検知。中断するぞい: {e}")
+                    print(f"  [!] リプライに失敗: {e}")
+                    # リプライだけ失敗する場合は、APIプランの「リプライ制限」が濃厚
                     return 
 
-    print("\n" + "-"*40)
-    print("パトロール完了じゃ！")
+    print("\n今回の全工程が終了じゃ！")
 
 if __name__ == "__main__":
     start_patrol()
