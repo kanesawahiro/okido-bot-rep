@@ -1,9 +1,9 @@
-name: Okido Bot Patrol
+name: Okido Bot Patrol Stealth
 
 on:
   schedule:
-    - cron: '0 */3 * * *' # 3時間おき（1日8回）
-  workflow_dispatch: # 手動ボタンも残しておくぞい
+    - cron: '0 */3 * * *' # 3時間おき
+  workflow_dispatch:
 
 jobs:
   build:
@@ -13,7 +13,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: os-setup/setup-python@v5
+        uses: actions/setup-python@v5
         with:
           python-version: '3.9'
 
