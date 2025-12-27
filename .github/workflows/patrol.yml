@@ -2,17 +2,21 @@ name: Okido Patrol
 
 on:
   schedule:
+    # 毎日 日本時間 08:00 (UTC 23:00) と 20:00 (UTC 11:00) に自動出動！
     - cron: '0 23,11 * * *'
-  workflow_dispatch:
+  workflow_dispatch: # 手動実行ボタンを有効にするぞい
 
 jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: write # 博士の記憶（replied_tweets.txt）を更新するのに必要じゃ
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          # 【重要】余計なフォルダを作らず、この場所にファイルを展開せよという命令じゃ！
+          path: '.'
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -31,19 +35,18 @@ jobs:
           X_ACCESS_TOKEN_SECRET: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
           X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
           RAPID_API_KEY: ${{ secrets.RAPID_API_KEY }}
-        # 【修正ポイント】cdコマンドで、ファイルがある場所に強制移動するのじゃ！
         run: |
-          # どこの階層にいても、ファイルがある場所を見つけてそこへ移動するぞい
-          TARGET_DIR=$(find . -name "okido_bot_cloud.py" -printf '%h\n' | head -n 1)
-          cd "$TARGET_DIR"
+          # 念のため、実行前にファイルがあるか確認してログに出すぞい
+          ls -la
           python okido_bot_cloud.py
 
       - name: Commit and push changes
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          # ファイルがある場所をgitに教えてやるのじゃ
-          TARGET_DIR=$(find . -name "replied_tweets.txt" -printf '%h\n' | head -n 1)
-          git add "$TARGET_DIR/replied_tweets.txt"
-          git commit -m "博士の記憶を更新" || echo "No changes to commit"
-          git push
+          # ファイルが存在する場合のみ保存するのじゃ
+          if [ -f replied_tweets.txt ]; then
+            git add replied_tweets.txt
+            git commit -m "博士の記憶を更新（パトロール完了）" || echo "変更なし"
+            git push
+          fi
