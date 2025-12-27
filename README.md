@@ -1,11 +1,12 @@
-# 🎓 マサラタウン日本語研究所　日本語パトロールプロジェクト
+# 🎓 日本語パトロールX bot マサラタウン日本語研究所　
 ### 〜 正しい日本語、ゲットじゃぞ！ 〜
 
 ![GitHub Actions Status](https://img.shields.io/badge/Status-Active-brightgreen)
 ![Python Version](https://img.shields.io/badge/Python-3.9%2B-blue)
 ![License](https://img.shields.io/badge/License-MIT-orange)
 
-X（旧Twitter）上に蔓延る「日本語のうっかりミス」を調査し、オーキド博士が添削リプライを送る高度な自動巡回システムです。単なるボットではなく、「人間らしさ」を徹底追求した次世代型SNSエージェントを目指しています。
+X（旧Twitter）上に蔓延る「日本語ミス」を調査し、オーキド博士が添削リプライを送る高度な自動巡回システムです。
+単なるボットではなく、「人間らしさ」を徹底追求した次世代型SNSエージェントを目指しています。
 
 ---
 
