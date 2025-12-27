@@ -26,14 +26,16 @@ jobs:
 
       - name: Run bot
         env:
-          # GitHubのSettingsで登録した秘密の鍵たちを博士に渡すぞ
           X_API_KEY: ${{ secrets.X_API_KEY }}
           X_API_SECRET: ${{ secrets.X_API_SECRET }}
           X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
           X_ACCESS_TOKEN_SECRET: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
           X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
           RAPID_API_KEY: ${{ secrets.RAPID_API_KEY }}
-        run: python okido_bot_cloud.py
+        # ここを「この場所（./）にあるファイルを実行せよ」という書き方に変えるぞい！
+        run: |
+          ls -R  # デバッグ用にファイル一覧を表示させるおまじない
+          python ./okido_bot_cloud.py
 
       - name: Commit and push changes
         run: |
