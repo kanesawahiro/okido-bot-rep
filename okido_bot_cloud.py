@@ -43,21 +43,21 @@ def save_replied_id(tweet_id):
     with open(REPLIED_FILE, "a+", encoding="utf-8") as f:
         f.write(f"{tweet_id}\n")
 
-# --- 4. パトロール実行（究極のステルスver） ---
+# --- 4. パトロール実行 ---
 def start_patrol():
-    # 【ライフリズム】日本時間の午前2時〜8時は活動休止（深夜休み）
-    # GitHub ActionsはUTCなので、+9時間してJSTで判定
-    current_hour_jst = (time.gmtime().tm_hour + 9) % 24
-    if 2 <= current_hour_jst <= 7:
-        print(f"博士「今は日本時間で{current_hour_jst}時...スヤスヤ...。調査は休みじゃ。」")
-        return
+    # 【テスト用】深夜休みも一旦コメントアウトしておくぞい
+    # current_hour_jst = (time.gmtime().tm_hour + 9) % 24
+    # if 2 <= current_hour_jst <= 7:
+    #     print(f"博士「今は日本時間で{current_hour_jst}時...スヤスヤ...。調査は休みじゃ。」")
+    #     return
 
-    # 【起動のゆらぎ】開始前に最大15分（900秒）ランダム待機
-    wait_before = random.randint(0, 900)
-    print(f"博士「ふむ...あと{wait_before}秒ほど準備してから出発するぞい。」")
-    time.sleep(wait_before)
+    # 【テスト用】即時開始するためにスリープを無効化じゃ！
+    # wait_before = random.randint(0, 900)
+    # print(f"博士「ふむ...あと{wait_before}秒ほど準備してから出発するぞい。」")
+    # time.sleep(wait_before)
+    
+    print("博士「準備万端！すぐにパトロールへ出発するぞい！」")
 
-    # 【件数のムラ】1回のリプライ数を2〜3件でランダムに決定
     MAX_REPLIES = random.randint(2, 3)
     replied_count = 0
     replied_ids = load_replied_ids()
@@ -82,18 +82,25 @@ def start_patrol():
             if wrong in text and right not in text:
                 try:
                     msg = generate_okido_msg(user_name, wrong, right)
-                    # リプライ専用・メンション付き
-                    client.create_tweet(text=msg, in_reply_to_tweet_id=int(tweet_id))
                     
-                    print(f"  【成功】{user_name}くんへリプライ完了！")
+                    client.create_tweet(
+                        text=msg, 
+                        in_reply_to_tweet_id=int(tweet_id)
+                    )
+                    
+                    print(f"   【成功】{user_name}くんへリプライ完了！")
                     save_replied_id(tweet_id)
                     replied_ids.add(tweet_id)
                     replied_count += 1
                     
-                    # リプライ間隔も3〜5分でランダムに
-                    time.sleep(random.randint(180, 300))
+                    # リプライ間の待機もテスト中は短め（10秒）にしておくぞ
+                    time.sleep(10) 
+
+                except tweepy.errors.Forbidden as e:
+                    print(f"   [!] 403エラー：やはり権限が壁になっておるな！理由: {e}")
+                    return 
                 except Exception as e:
-                    print(f"  [!] エラー発生: {e}")
+                    print(f"   [!] エラー発生: {e}")
                     return 
 
     print("パトロール完了じゃ！")
