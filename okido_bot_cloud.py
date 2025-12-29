@@ -9,9 +9,9 @@ from messages import CORRECTION_RULES, generate_okido_msg
 # 環境変数のロード
 load_dotenv()
 
-# --- 1. X API 認証設定（API v2 専用） ---
-# お主が画像で確認した「Read and write」権限を持つ新しいカギを使うぞい！
+# --- 1. X API (v2) 認証設定 ---
 client = tweepy.Client(
+    bearer_token=os.getenv("X_BEARER_TOKEN"),
     consumer_key=os.getenv("X_API_KEY"),
     consumer_secret=os.getenv("X_API_SECRET"),
     access_token=os.getenv("X_ACCESS_TOKEN"),
@@ -25,7 +25,6 @@ def search_tweets_external(query):
         "x-rapidapi-key": os.getenv("RAPID_API_KEY"),
         "x-rapidapi-host": "twitter-api45.p.rapidapi.com"
     }
-    # 重複を避けるため、少し検索範囲を狭めて「ライブ」な投稿を狙うぞい
     params = {"query": f'"{query}" -filter:retweets', "search_mode": "live"}
     try:
         response = requests.get(url, headers=headers, params=params)
@@ -44,16 +43,28 @@ def save_replied_id(tweet_id):
     with open(REPLIED_FILE, "a+", encoding="utf-8") as f:
         f.write(f"{tweet_id}\n")
 
-# --- 4. パトロール実行 ---
+# --- 4. パトロール実行（究極のステルスver） ---
 def start_patrol():
-    print("博士「さあ、新しい体での初パトロール、出発じゃ！」")
+    # 【ライフリズム】日本時間の午前2時〜8時は活動休止（深夜休み）
+    # GitHub ActionsはUTCなので、+9時間してJSTで判定
+    current_hour_jst = (time.gmtime().tm_hour + 9) % 24
+    if 2 <= current_hour_jst <= 7:
+        print(f"博士「今は日本時間で{current_hour_jst}時...スヤスヤ...。調査は休みじゃ。」")
+        return
 
-    # 初動は慎重に、1〜2件を目標にするぞい
-    MAX_REPLIES = 2
+    # 【起動のゆらぎ】開始前に最大15分（900秒）ランダム待機
+    wait_before = random.randint(0, 900)
+    print(f"博士「ふむ...あと{wait_before}秒ほど準備してから出発するぞい。」")
+    time.sleep(wait_before)
+
+    # 【件数のムラ】1回のリプライ数を2〜3件でランダムに決定
+    MAX_REPLIES = random.randint(2, 3)
     replied_count = 0
     replied_ids = load_replied_ids()
     search_list = list(CORRECTION_RULES.items())
     random.shuffle(search_list)
+
+    print(f"パトロール開始！今回の目標は{MAX_REPLIES}件じゃ！")
 
     for wrong, right in search_list:
         if replied_count >= MAX_REPLIES: break
@@ -66,35 +77,26 @@ def start_patrol():
             text = tweet.get('text', '')
 
             if not tweet_id or not user_name or tweet_id in replied_ids: continue
-            
-            # ボットや通報を避ける防衛本能じゃ
             if any(k in text for k in ["bot", "通報", "ブロック"]): continue
 
             if wrong in text and right not in text:
                 try:
                     msg = generate_okido_msg(user_name, wrong, right)
+                    # リプライ専用・メンション付き
+                    client.create_tweet(text=msg, in_reply_to_tweet_id=int(tweet_id))
                     
-                    # --- ここが API v2 でのリプライ送信じゃ！ ---
-                    # in_reply_to_tweet_id を指定するのがポイントじゃぞ
-                    client.create_tweet(
-                        text=msg,
-                        in_reply_to_tweet_id=tweet_id
-                    )
-                    
-                    print(f"   【大成功】{user_name}くんへ正しい日本語を届けたぞい！")
+                    print(f"  【成功】{user_name}くんへリプライ完了！")
                     save_replied_id(tweet_id)
                     replied_ids.add(tweet_id)
                     replied_count += 1
                     
-                    # 連続投稿で怪しまれないよう、少し休むぞい
-                    time.sleep(15) 
-
+                    # リプライ間隔も3〜5分でランダムに
+                    time.sleep(random.randint(180, 300))
                 except Exception as e:
-                    print(f"   [!] エラー発生: {e}")
-                    # 重複エラー(403)が出た場合は、次へ行くのじゃ
-                    continue
+                    print(f"  [!] エラー発生: {e}")
+                    return 
 
-    print("博士「今日のパトロールはここまでじゃ！また明日会おう！」")
+    print("パトロール完了じゃ！")
 
 if __name__ == "__main__":
     start_patrol()
