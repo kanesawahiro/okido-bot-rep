@@ -9,7 +9,8 @@ from messages import CORRECTION_RULES, generate_okido_msg
 # 環境変数のロード
 load_dotenv()
 
-# --- 1. X API (v2) 認証設定 ---
+# --- 1. X API 認証設定（403突破・ハイブリッド版） ---
+# API v2 (一応残しておくが、今回はv1.1を優先するぞい)
 client = tweepy.Client(
     bearer_token=os.getenv("X_BEARER_TOKEN"),
     consumer_key=os.getenv("X_API_KEY"),
@@ -17,6 +18,17 @@ client = tweepy.Client(
     access_token=os.getenv("X_ACCESS_TOKEN"),
     access_token_secret=os.getenv("X_ACCESS_TOKEN_SECRET")
 )
+
+# API v1.1 (リプライ送信の成功率が極めて高い伝統的な方式じゃ)
+auth = tweepy.OAuthHandler(
+    os.getenv("X_API_KEY"),
+    os.getenv("X_API_SECRET")
+)
+auth.set_access_token(
+    os.getenv("X_ACCESS_TOKEN"),
+    os.getenv("X_ACCESS_TOKEN_SECRET")
+)
+api = tweepy.API(auth)
 
 # --- 2. 外部検索エンジン（RapidAPI） ---
 def search_tweets_external(query):
@@ -45,18 +57,8 @@ def save_replied_id(tweet_id):
 
 # --- 4. パトロール実行 ---
 def start_patrol():
-    # 【テスト用】深夜休みも一旦コメントアウトしておくぞい
-    # current_hour_jst = (time.gmtime().tm_hour + 9) % 24
-    # if 2 <= current_hour_jst <= 7:
-    #     print(f"博士「今は日本時間で{current_hour_jst}時...スヤスヤ...。調査は休みじゃ。」")
-    #     return
-
-    # 【テスト用】即時開始するためにスリープを無効化じゃ！
-    # wait_before = random.randint(0, 900)
-    # print(f"博士「ふむ...あと{wait_before}秒ほど準備してから出発するぞい。」")
-    # time.sleep(wait_before)
-    
-    print("博士「準備万端！すぐにパトロールへ出発するぞい！」")
+    # テスト用に制限を解除したままにしておくぞい
+    print("博士「ハイブリッド認証で、403の壁をぶち破りに行くぞい！」")
 
     MAX_REPLIES = random.randint(2, 3)
     replied_count = 0
@@ -83,9 +85,11 @@ def start_patrol():
                 try:
                     msg = generate_okido_msg(user_name, wrong, right)
                     
-                    client.create_tweet(
-                        text=msg, 
-                        in_reply_to_tweet_id=int(tweet_id)
+                    # --- ここが403回避の切り札「v1.1送信」じゃ！ ---
+                    api.update_status(
+                        status=msg, 
+                        in_reply_to_status_id=tweet_id, 
+                        auto_populate_reply_metadata=True
                     )
                     
                     print(f"   【成功】{user_name}くんへリプライ完了！")
@@ -93,11 +97,10 @@ def start_patrol():
                     replied_ids.add(tweet_id)
                     replied_count += 1
                     
-                    # リプライ間の待機もテスト中は短め（10秒）にしておくぞ
                     time.sleep(10) 
 
                 except tweepy.errors.Forbidden as e:
-                    print(f"   [!] 403エラー：やはり権限が壁になっておるな！理由: {e}")
+                    print(f"   [!] 403エラー：これでもダメか！理由: {e}")
                     return 
                 except Exception as e:
                     print(f"   [!] エラー発生: {e}")
