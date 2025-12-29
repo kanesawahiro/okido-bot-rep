@@ -1,103 +1,104 @@
-# X自動リプライbot マサラタウン日本語研究所　
-### 〜 正しい日本語、ゲットじゃぞ！ 〜
+# 🎓 Project Okido: Semantic Japanese Correction Bot
 
-![GitHub Actions Status](https://img.shields.io/badge/Status-Active-brightgreen)
-![Python Version](https://img.shields.io/badge/Python-3.9%2B-blue)
-![License](https://img.shields.io/badge/License-MIT-orange)
+[![Python Version](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Gemini API](https://img.shields.io/badge/AI-Gemini%201.5%20Flash-orange.svg)](https://ai.google.dev/)
+[![Library](https://img.shields.io/badge/Lib-google--genai-green.svg)](https://pypi.org/project/google-genai/)
 
-X（旧Twitter）上に蔓延る「日本語ミス」を調査し、オーキド博士が添削リプライを送る高度な自動巡回システムです。
-単なるボットではなく、「人間らしさ」を徹底追求した次世代型SNSエージェントを目指しています。
-
----
-
-## 📖 プロジェクトの背景
-
-SNSの普及により、若者を中心に「そうゆう（正：そういう）」「ゆった（正：いった）」といった誤用が急増しています。
-この現状を憂いたマサラタウンのオーキド博士が、24時間体制で日本語の乱れを正します。
+> **「正しい日本語、ゲットじゃぞ〜！」**
+> 
+> 本プロジェクトは、SNS上の日本語誤用（例：「そうゆう」→「そういう」）をリアルタイムで検知し、オーキド博士のキャラクター性を用いて教育的なフィードバックを自動送信するソーシャル・リスニング・エージェントです。
 
 ---
 
-## 🛠️ 技術的特徴（Technical Features）
+## 🔬 1. 設計思想 (Architectural Philosophy)
 
-### 1. ハイブリッド・アーキテクチャ
-* **API層**: X API v2 (Free Plan) を使用し、リプライの投稿を担当。
-* **検索層**: X純正の検索制限を回避するため、**RapidAPI (Twitter-API45)** を介してツイートを取得。
-* **実行層**: **GitHub Actions** 上で完全サーバーレス稼働。
+本システムは、単なる文字列置換Botではありません。以下の3つの柱に基づき設計されています。
 
-### 2. インテリジェント・ステルス・アルゴリズム
-Xの厳しいスパム検知を回避し、アカウントの健全性を保つために以下の機能を搭載しています。
-
-* **Jittering（ゆらぎ待機）**: 
-    予約時間から **0秒〜900秒の間でランダムな待機時間** を発生させ、機械的な定期投稿パターンを破壊します。
-* **Sleep Cycle（睡眠サイクル）**: 
-    日本時間（JST）の深夜帯（AM 2:00 〜 AM 8:00）は、博士の休息時間としてパトロールを自動停止。不自然な24時間連続活動を回避します。
-* **Variable Batching（件数ムラ）**: 
-    1回のパトロールあたりの添削件数を **2〜3件でランダム化**。一貫性を排除し、人間が「たまたま見つけた」状況をシミュレートします。
-* **Randomized Cooling（インターバル）**: 
-    リプライとリプライの間に **180秒〜300秒の待機** を挟み、バースト投稿による403エラーのリスクを最小化します。
-
-### 3. 投稿リミットの最適分配
-本システムは、X API Freeプランの制限（月間500投稿）を数学的に計算し、最大限活用するように設計されています。
-月間枠の93%を消費する高効率設計により、制限内での最大級の活動を実現しています。
-* 月間上限: 500件
-* 1日平均許容数: 約16.1件
-* 本システムの設計値: 1日平均15件（月間換算 約465件）
-* 枠消費率: 93%
+1. **Semantic Consistency (文脈の整合性)**
+   最新のLLM（Gemini 1.5 Flash）を活用。単なる添削ではなく「オーキド博士」というキャラクターを通じ、ポケモン世界のメタファーを用いた教育体験を提供します。
+2. **Robust Filtering (堅牢な鑑定ロジック)**
+   「ゆったん」「ゆったり」「こんにちわんこ」等の固有名詞・擬態語・遊びの挨拶を誤検知（False Positive）しないよう、多層的な除外フレーズ・フィルタリングを実装しています。
+3. **Strategic Polling (戦略的調査リズム)**
+   APIのレート制限を考慮し、1語句ずつの逐次検索、失敗時のインターバル（10秒）、成功後の休息（3分）といった、人間らしい探索アルゴリズムを採用しています。
 
 ---
 
-## 📂 リポジトリ構成と役割
+## 🛠 2. 技術スタック (Tech Stack)
 
-| ファイル名 | 役割 | 詳細解説 |
+| カテゴリ | 採用技術 | 役割 |
 | :--- | :--- | :--- |
-| `okido_bot_cloud.py` | **メイン頭脳** | 検索・判定・投稿・ゆらぎ制御を司るコアプログラム。 |
-| `messages.py` | **言語データベース** | 100種類以上のセリフと、添削用辞書（Dictionary）を格納。 |
-| `.github/workflows/main.yml` | **運営指示書** | 3時間おきの定期実行スケジュールと環境変数の定義。 |
-| `replied_tweets.txt` | **パトロール日誌** | 重複リプライを防ぐために投稿済みIDを記録するデータベース。 |
-| `requirements.txt` | **必要図鑑** | 実行に必要なPythonライブラリのリスト。 |
+| **Language** | Python 3.9+ | メインロジックの実装 |
+| **AI Engine** | Google GenAI SDK (v1.0+) | 自然言語生成 (NLG) |
+| **Social API** | X API v2 (Tweepy) | リプライ送信・スレッド管理 |
+| **Search Engine** | RapidAPI (Twitter 135) | データマイニング / リアルタイム検索 |
+| **Automation** | GitHub Actions | 定期実行 (Cron) & 送信履歴の永続化 |
+| **Timezone** | Pytz (Asia/Tokyo) | 博士の生活リズム（活動時間）の制御 |
 
 ---
 
-## ⚙️ セットアップと運用方法
+## 🧬 3. システム・アーキテクチャ (System Architecture)
 
-### 必要な環境変数 (Secrets)
-GitHubレポジトリの `Settings > Secrets and variables > Actions` に以下の鍵を登録する必要があります。
 
-* `X_API_KEY / X_API_SECRET`: XのConsumer Key
-* `X_ACCESS_TOKEN / X_ACCESS_TOKEN_SECRET`: 権限（Read and Write）を持つトークン
-* `X_BEARER_TOKEN`: X API v2用
-* `RAPID_API_KEY`: RapidAPIの認証用
 
-### パトロール・ロジック
-1.  **起動**: GitHub Actionsが3時間おきにコンテナを起動。
-2.  **判定**: 現在時刻が「睡眠時間」でないかチェック。
-3.  **待機**: 「二度寝（Jitter）」を実行。
-4.  **検索**: 修正対象キーワード（「そうゆう」等）を検索。
-5.  **添削**: セリフをランダム抽選し、Xへリプライ。
-6.  **記録**: 投稿したIDを `replied_tweets.txt` に追記して保存。
+本システムは以下のステートフローで動作します。
+
+1. **Activator**: GitHub Actionsにより1時間おきにパトロールを開始。
+2. **Scout**: 20種類以上の誤用キーワードからランダムに1つを選択し、X（旧Twitter）上をスキャン。
+3. **Assessor (鑑定)**:
+   - **重複チェック**: すでにリプライ済みのツイートを排除。
+   - **コンテキスト解析**: ユーザー名や本文に除外フレーズが含まれていないか確認。
+   - **セルフチェック**: 投稿者がすでに正しい日本語を併記している場合はスルー。
+4. **GenAI Thinker**: Geminiが文脈を読み取り、博士の口調（「ワシ」「〜じゃぞい」）で添削文を生成。
+5. **Action**: ターゲットへリプライを送信し、成果を `replied_tweets.txt` に記録。
 
 ---
 
-## 📝 添削ルールの一部紹介
+## 🚀 4. セットアップ (Installation & Setup)
 
-博士が特に重点的に調査している日本語は以下の通りです：
+### プリレクイジット
+- Python 3.9 以上
+- X Developer Portal (API Key, Secret, Access Token, Bearer Token)
+- Google AI Studio (Gemini API Key)
+- RapidAPI (Twitter 135 API Key)
 
-* 「そうゆう」 → 「そういう」
-* 「こうゆう」 → 「こういう」
-* 「ゆった」   → 「いった」
-* 「こんにちわ」 → 「こんにちは」
-* 「こんばんわ」 → 「こんばんは」
+### インストール手順
+1. リポジトリのクローン
+   git clone https://github.com/yourusername/okido-bot-rep.git
+   cd okido-bot-rep
+
+2. 依存ライブラリのインストール
+   pip install -r requirements.txt
+
+3. 環境変数の設定 (.env)
+   cp .env.example .env
+
+### 環境変数 (.env) の設定内容
+GEMINI_API_KEY=your_key
+X_API_KEY=your_key
+X_API_SECRET=your_secret
+X_ACCESS_TOKEN=your_token
+X_ACCESS_SECRET=your_secret
+X_BEARER_TOKEN=your_token
+RAPIDAPI_KEY=your_key
 
 ---
 
-## ⚠️ 免責事項（Disclaimer）
-* 本プロジェクトは日本語の啓蒙とエンターテインメントを目的とした非営利活動です。
-* Xの利用規約（TOS）を遵守するため、月間500件の投稿枠を厳守しています。
-* ポケモンおよびオーキド博士の著作権は、株式会社ポケモン・任天堂・クリーチャーズ・ゲームフリークに帰属します。
+## 📊 5. 運用ログの読み方 (Observability)
+
+博士の活動はターミナルおよびGitHubのアクションログで詳細に確認可能です。
+
+- [待機]: パトロール開始前のランダムな準備時間。
+- [鑑定回避]: 名前にキーワードが含まれるユーザー等を正しくスルーした記録。
+- [思考]: Geminiが博士のセリフを生成しているプロセス。
+- [APIエラー]: 通信障害やレート制限の具体的なステータスコード。
 
 ---
 
-### 🎓 開発者より
-「日本語もポケモンも、正しく育ててこそ真のマスターじゃぞい！」
+## 📜 6. 免責事項 (Disclaimer)
 
-© 2025 マサラタウン日本語研究所 - Pokémon is a trademark of Nintendo/Creatures Inc./GAME FREAK inc.
+本プロジェクトはファン活動およびプログラミング学習の一環として開発されており、株式会社ポケモン、株式会社ゲームフリーク、その他公式企業とは一切関係ありません。日本語の美しさを広めるための、ユーモアを交えた教育的Botです。
+
+---
+
+Developed by Kanesawa Hiroki (Okido Lab Assistant)
